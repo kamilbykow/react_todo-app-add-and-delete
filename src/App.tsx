@@ -1,38 +1,61 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { UserWarning } from './UserWarning';
 import { deleteTodo, getTodos, postTodo, USER_ID } from './api/todos';
 import { Header } from './components/Header/Header';
-import { Main } from './components/Main/Main';
+import { TodosList } from './components/TodosList/TodosList';
 import { Footer } from './components/Footer/Footer';
 import { Todo } from './types/Todo';
 // eslint-disable-next-line max-len
 import { ErrorNotification } from './components/ErrorNotification/ErrorNotification';
 
-export type Filters = 'Completed' | 'Active' | 'All';
+export enum Filters {
+  Completed,
+  Active,
+  All,
+}
+
+interface ContextType {
+  filter: Filters;
+  changeFilter: (name: Filters) => void;
+}
+
+export const Context = createContext<ContextType | undefined>(undefined);
+
+export const useFilterContext = () => {
+  const context = useContext(Context);
+
+  if (context === undefined) {
+    throw new Error('undefined Context');
+  }
+
+  return context;
+};
 
 export const App: React.FC = () => {
   const [query, setQuery] = useState<string>('');
-  const [disableSubmit, setDisableSubmit] = useState(false);
-  const [todos, setTodos] = useState<Todo[] | undefined>();
-  const [error, setError] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [filter, setFilter] = useState<Filters>('All');
+  const [disableWritingInput, setDisableWritingInput] = useState(false);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [error, setError] = useState<string>('');
   const [tempTodo, setTempTodo] = useState<Todo[] | null>();
   const [todosToDelete, setTodosToDelete] = useState<number[]>([]);
+  const [filter, setFilter] = useState<Filters>(Filters.All);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   let filteredTodos: Todo[] | undefined = todos;
 
-  const changeFilter = (name: Filters) => {
-    setFilter(name);
-  };
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDisableSubmit(true);
+    setDisableWritingInput(true);
     const todo = {
       title: query.trim(),
       completed: false,
@@ -42,64 +65,85 @@ export const App: React.FC = () => {
     setTempTodo([{ ...todo, id: 0 }]);
 
     if (query.trim().length === 0) {
-      setError(true);
-      setErrorMsg('Title should not be empty');
-    }
-
-    postTodo(todo)
-      .then(res => {
-        setQuery('');
-        setTempTodo(null);
-        setTodos(prev => {
-          if (prev === undefined) {
-            return [res];
-          } else {
-            return [...prev, res];
-          }
+      setError('Title should not be empty');
+      setTempTodo(null);
+      setDisableWritingInput(false);
+    } else {
+      postTodo(todo)
+        .then(res => {
+          setQuery('');
+          setTempTodo(null);
+          setTodos(prev => {
+            if (prev === undefined) {
+              return [res];
+            } else {
+              return [...prev, res];
+            }
+          });
+        })
+        .catch(() => {
+          setTempTodo(null);
+          setError('Unable to add a todo');
+        })
+        .finally(() => {
+          setDisableWritingInput(false);
+          inputRef.current?.focus();
         });
-      })
-      .catch(() => {
-        setTempTodo(null);
-        setError(true);
-        setErrorMsg('Unable to add a todo');
-      })
-      .finally(() => {
-        setDisableSubmit(false);
-      });
+    }
   };
 
-  const handleDelete = async (id: number[]) => {
-    setTodosToDelete(id);
-    for (let i = 0; i < id.length; i++) {
-      try {
-        await deleteTodo(id[i]);
-        setTodos(prev => {
-          if (prev === undefined) {
-            return prev;
-          } else {
-            return prev.filter(todo => todo.id !== id[i]);
-          }
-        });
-      } catch {
-        setError(true);
-        setErrorMsg('Unable to delete a todo');
-      } finally {
-        setTodosToDelete([]);
-        inputRef.current?.focus();
+  const handleDelete = async (ids: number[]) => {
+    setTodosToDelete(ids);
+    const promises = ids.map(id => deleteTodo(id));
+    const results = await Promise.allSettled(promises);
+
+    const successfulIds: number[] = [];
+    const failedIds: number[] = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        successfulIds.push(ids[index]);
+      } else {
+        failedIds.push(ids[index]);
       }
+    });
+
+    if (failedIds.length > 0) {
+      setError('Unable to delete a todo');
     }
+
+    if (successfulIds.length > 0) {
+      setTodos(prev => {
+        if (prev === undefined) {
+          return prev;
+        } else {
+          return prev.filter(todo => !successfulIds.includes(todo.id));
+        }
+      });
+      setTodosToDelete([]);
+      inputRef.current?.focus();
+    }
+  };
+
+  const changeFilter = (name: Filters) => {
+    setFilter(name);
+  };
+
+  const value = {
+    filter: filter,
+    changeFilter: changeFilter,
   };
 
   filteredTodos = useMemo(() => {
     if (todos) {
       switch (filter) {
-        case 'Completed':
+        case Filters.Completed:
           return filteredTodos?.filter(todo => todo.completed);
 
-        case 'Active':
+        case Filters.Active:
           return filteredTodos?.filter(todo => !todo.completed);
 
-        case 'All':
+        case Filters.All:
           return todos;
       }
     }
@@ -118,8 +162,7 @@ export const App: React.FC = () => {
         setTodos(resp);
       })
       .catch(() => {
-        setErrorMsg('Unable to load todos');
-        setError(true);
+        setError('Unable to load todos');
       });
   }, []);
 
@@ -132,16 +175,16 @@ export const App: React.FC = () => {
           query={query}
           setQuery={item => setQuery(item)}
           handleSubmit={handleSubmit}
-          disableSubmit={disableSubmit}
+          disableInput={disableWritingInput}
           inputRef={inputRef}
         />
 
-        <Main
+        <TodosList
           todos={filteredTodos}
           handleDelete={handleDelete}
           todosToDelete={todosToDelete}
         />
-        <Main
+        <TodosList
           todos={tempTodo}
           handleDelete={handleDelete}
           todosToDelete={todosToDelete}
@@ -149,13 +192,13 @@ export const App: React.FC = () => {
         {/* Hide the footer if there are no todos */}
 
         {todos && todos?.length > 0 && (
-          <Footer
-            count={todos.filter(todo => !todo.completed).length}
-            setFilter={changeFilter}
-            activeFilter={filter}
-            Completed={todos.filter(todo => todo.completed)}
-            handleDelete={handleDelete}
-          />
+          <Context.Provider value={value}>
+            <Footer
+              count={todos.filter(todo => !todo.completed).length}
+              completed={todos.filter(todo => todo.completed)}
+              handleDelete={handleDelete}
+            />
+          </Context.Provider>
         )}
       </div>
 
@@ -164,7 +207,7 @@ export const App: React.FC = () => {
       <ErrorNotification
         hidden={error}
         setError={async err => setError(err)}
-        errorMsg={errorMsg}
+        error={error}
       />
     </div>
   );

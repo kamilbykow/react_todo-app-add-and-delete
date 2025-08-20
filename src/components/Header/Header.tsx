@@ -4,7 +4,7 @@ type Props = {
   query: string;
   setQuery: (item: string) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  disableSubmit: boolean;
+  disableInput: boolean;
   inputRef: React.RefObject<HTMLInputElement>;
 };
 
@@ -12,14 +12,14 @@ export const Header: React.FC<Props> = ({
   query,
   setQuery,
   handleSubmit,
-  disableSubmit,
+  disableInput,
   inputRef,
 }) => {
   useEffect(() => {
-    if (!disableSubmit) {
+    if (!disableInput) {
       inputRef.current?.focus();
     }
-  }, [disableSubmit, inputRef]);
+  }, [disableInput, inputRef]);
 
   return (
     <header className="todoapp__header">
@@ -47,7 +47,7 @@ export const Header: React.FC<Props> = ({
           onChange={e => {
             setQuery(e.target.value);
           }}
-          disabled={disableSubmit}
+          disabled={disableInput}
         />
       </form>
     </header>

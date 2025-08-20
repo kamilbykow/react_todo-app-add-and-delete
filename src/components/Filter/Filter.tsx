@@ -1,36 +1,40 @@
-import { Filters } from '../../App';
+import classNames from 'classnames';
+import { Filters, useFilterContext } from '../../App';
 
-type Props = {
-  setFilter: (name: Filters) => void;
-  activeFilter: Filters;
-};
+export const Filter: React.FC = () => {
+  const { filter, changeFilter } = useFilterContext();
 
-export const Filter: React.FC<Props> = ({ setFilter, activeFilter }) => {
   return (
     <nav className="filter" data-cy="Filter">
       <a
         href="#/"
-        className={`filter__link ${activeFilter === 'All' ? 'selected' : ''}`}
+        className={classNames('filter__link', {
+          selected: filter === Filters.All,
+        })}
         data-cy="FilterLinkAll"
-        onClick={() => setFilter('All')}
+        onClick={() => changeFilter(Filters.All)}
       >
         All
       </a>
 
       <a
         href="#/active"
-        className={`filter__link ${activeFilter === 'Active' ? 'selected' : ''}`}
+        className={classNames('filter__link', {
+          selected: filter === Filters.Active,
+        })}
         data-cy="FilterLinkActive"
-        onClick={() => setFilter('Active')}
+        onClick={() => changeFilter(Filters.Active)}
       >
         Active
       </a>
 
       <a
         href="#/completed"
-        className={`filter__link ${activeFilter === 'Completed' ? 'selected' : ''}`}
+        className={classNames('filter__link', {
+          selected: filter === Filters.Completed,
+        })}
         data-cy="FilterLinkCompleted"
-        onClick={() => setFilter('Completed')}
+        onClick={() => changeFilter(Filters.Completed)}
       >
         Completed
       </a>

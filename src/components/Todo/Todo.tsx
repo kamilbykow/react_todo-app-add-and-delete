@@ -12,8 +12,14 @@ type Props = {
 export const Todo: React.FC<Props> = ({ todo, handleDelete, toDelete }) => {
   const [loading, setLoading] = useState(false);
 
+  const checkTempTodo = (id: number) => {
+    const TEMP_TODO_ID = 0;
+
+    return id === TEMP_TODO_ID;
+  };
+
   useEffect(() => {
-    if (todo.id === 0) {
+    if (checkTempTodo(todo.id)) {
       setLoading(true);
     }
   }, [todo.id]);

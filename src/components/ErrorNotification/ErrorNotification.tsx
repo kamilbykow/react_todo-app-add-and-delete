@@ -1,25 +1,26 @@
 import { useEffect, useState } from 'react';
 
 type Props = {
-  hidden: boolean;
-  setError: (err: boolean) => {};
-  errorMsg: string | undefined;
+  hidden: string;
+  setError: (err: string) => {};
+  error: string;
 };
 
 export const ErrorNotification: React.FC<Props> = ({
   hidden,
   setError,
-  errorMsg,
+  error,
 }) => {
   const [hide, setHide] = useState(true);
+  const ERROR_CLEANUP_TIMEOUT = 3000;
 
   useEffect(() => {
     if (hidden) {
       setHide(false);
       setTimeout(() => {
         setHide(true);
-        setError(false);
-      }, 3000);
+        setError('');
+      }, ERROR_CLEANUP_TIMEOUT);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hidden]);
@@ -37,17 +38,7 @@ export const ErrorNotification: React.FC<Props> = ({
           setHide(true);
         }}
       />
-      {/* show only one message at a time */}
-      {/* Unable to load todos */}
-      {errorMsg}
-      {/* <br />
-      Title should not be empty
-      <br />
-      Unable to add a todo
-      <br />
-      Unable to delete a todo
-      <br />
-      Unable to update a todo */}
+      {error}
     </div>
   );
 };
