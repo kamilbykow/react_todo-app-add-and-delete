@@ -1,13 +1,6 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { UserWarning } from './UserWarning';
 import { deleteTodo, getTodos, postTodo, USER_ID } from './api/todos';
 import { Header } from './components/Header/Header';
@@ -16,6 +9,7 @@ import { Footer } from './components/Footer/Footer';
 import { Todo } from './types/Todo';
 // eslint-disable-next-line max-len
 import { ErrorNotification } from './components/ErrorNotification/ErrorNotification';
+import { Context } from './components/Context/Context';
 
 export enum Filters {
   Completed,
@@ -23,35 +17,16 @@ export enum Filters {
   All,
 }
 
-interface ContextType {
-  filter: Filters;
-  changeFilter: (name: Filters) => void;
-}
-
-export const Context = createContext<ContextType | undefined>(undefined);
-
-export const useFilterContext = () => {
-  const context = useContext(Context);
-
-  if (context === undefined) {
-    throw new Error('undefined Context');
-  }
-
-  return context;
-};
-
 export const App: React.FC = () => {
   const [query, setQuery] = useState<string>('');
   const [disableWritingInput, setDisableWritingInput] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [error, setError] = useState<string>('');
-  const [tempTodo, setTempTodo] = useState<Todo[] | null>();
+  const [tempTodo, setTempTodo] = useState<Todo[] | null>(null);
   const [todosToDelete, setTodosToDelete] = useState<number[]>([]);
   const [filter, setFilter] = useState<Filters>(Filters.All);
 
   const inputRef = useRef<HTMLInputElement>(null);
-
-  let filteredTodos: Todo[] | undefined = todos;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -130,18 +105,18 @@ export const App: React.FC = () => {
   };
 
   const value = {
-    filter: filter,
-    changeFilter: changeFilter,
+    filter,
+    changeFilter,
   };
 
-  filteredTodos = useMemo(() => {
+  const filteredTodos: Todo[] | undefined = useMemo(() => {
     if (todos) {
       switch (filter) {
         case Filters.Completed:
-          return filteredTodos?.filter(todo => todo.completed);
+          return todos?.filter(todo => todo.completed);
 
         case Filters.Active:
-          return filteredTodos?.filter(todo => !todo.completed);
+          return todos?.filter(todo => !todo.completed);
 
         case Filters.All:
           return todos;
@@ -149,7 +124,7 @@ export const App: React.FC = () => {
     }
 
     return undefined;
-  }, [todos, filteredTodos, filter]);
+  }, [todos, filter]);
 
   if (!USER_ID) {
     return <UserWarning />;
@@ -173,7 +148,7 @@ export const App: React.FC = () => {
       <div className="todoapp__content">
         <Header
           query={query}
-          setQuery={item => setQuery(item)}
+          setQuery={setQuery}
           handleSubmit={handleSubmit}
           disableInput={disableWritingInput}
           inputRef={inputRef}
@@ -205,7 +180,7 @@ export const App: React.FC = () => {
       {/* DON'T use conditional rendering to hide the notification */}
       {/* Add the 'hidden' class to hide the message smoothly */}
       <ErrorNotification
-        hidden={error}
+        hidden={!!error}
         setError={async err => setError(err)}
         error={error}
       />

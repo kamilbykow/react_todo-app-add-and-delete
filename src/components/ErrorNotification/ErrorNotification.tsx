@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 type Props = {
-  hidden: string;
+  hidden: boolean;
   setError: (err: string) => {};
   error: string;
 };
@@ -11,14 +11,11 @@ export const ErrorNotification: React.FC<Props> = ({
   setError,
   error,
 }) => {
-  const [hide, setHide] = useState(true);
   const ERROR_CLEANUP_TIMEOUT = 3000;
 
   useEffect(() => {
     if (hidden) {
-      setHide(false);
       setTimeout(() => {
-        setHide(true);
         setError('');
       }, ERROR_CLEANUP_TIMEOUT);
     }
@@ -28,14 +25,14 @@ export const ErrorNotification: React.FC<Props> = ({
   return (
     <div
       data-cy="ErrorNotification"
-      className={`notification is-danger is-light has-text-weight-normal ${hide ? 'hidden' : ''}`}
+      className={`notification is-danger is-light has-text-weight-normal ${!hidden ? 'hidden' : ''}`}
     >
       <button
         data-cy="HideErrorButton"
         type="button"
         className="delete"
         onClick={() => {
-          setHide(true);
+          setError('');
         }}
       />
       {error}

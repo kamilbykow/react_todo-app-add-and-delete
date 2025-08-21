@@ -19,7 +19,8 @@ export const Header: React.FC<Props> = ({
     if (!disableInput) {
       inputRef.current?.focus();
     }
-  }, [disableInput, inputRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disableInput]);
 
   return (
     <header className="todoapp__header">

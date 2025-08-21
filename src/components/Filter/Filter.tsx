@@ -1,5 +1,6 @@
 import classNames from 'classnames';
-import { Filters, useFilterContext } from '../../App';
+import { useFilterContext } from '../Context/Context';
+import { Filters } from '../../App';
 
 export const Filter: React.FC = () => {
   const { filter, changeFilter } = useFilterContext();

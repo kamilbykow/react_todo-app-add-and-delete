@@ -1,6 +1,4 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-
-import { useEffect, useState } from 'react';
 import { Todo as TypeTodo } from '../../types/Todo';
 
 type Props = {
@@ -10,19 +8,13 @@ type Props = {
 };
 
 export const Todo: React.FC<Props> = ({ todo, handleDelete, toDelete }) => {
-  const [loading, setLoading] = useState(false);
-
   const checkTempTodo = (id: number) => {
     const TEMP_TODO_ID = 0;
 
     return id === TEMP_TODO_ID;
   };
 
-  useEffect(() => {
-    if (checkTempTodo(todo.id)) {
-      setLoading(true);
-    }
-  }, [todo.id]);
+  const isLoading = checkTempTodo(todo.id);
 
   return (
     <div data-cy="Todo" className={`todo ${todo.completed && 'completed'} `}>
@@ -31,7 +23,7 @@ export const Todo: React.FC<Props> = ({ todo, handleDelete, toDelete }) => {
           data-cy="TodoStatus"
           type="checkbox"
           className="todo__status"
-          defaultChecked={todo.completed}
+          checked={todo.completed}
         />
       </label>
 
@@ -52,7 +44,7 @@ export const Todo: React.FC<Props> = ({ todo, handleDelete, toDelete }) => {
       {/* overlay will cover the todo while it is being deleted or updated */}
       <div
         data-cy="TodoLoader"
-        className={`modal overlay ${loading || toDelete ? 'is-active' : ''}`}
+        className={`modal overlay ${isLoading || toDelete ? 'is-active' : ''}`}
       >
         <div className="modal-background has-background-white-ter" />
         <div className="loader" />
